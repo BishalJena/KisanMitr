@@ -39,6 +39,7 @@ from marketplace_database import marketplace_db
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+<<<<<<< HEAD
 # MongoDB connection with performance optimizations
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(
@@ -51,6 +52,11 @@ client = AsyncIOMotorClient(
     socketTimeoutMS=20000
 )
 db = client[os.environ['DB_NAME']]
+=======
+# Database connection is handled in database.py
+# Global database instance initialized on startup
+db = None
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 # Security
 security = HTTPBearer()
@@ -225,6 +231,7 @@ async def cache_conversation(conversation_id: str, user_id: str, messages: List[
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+<<<<<<< HEAD
     email: EmailStr
     password_hash: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -236,12 +243,41 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+=======
+    phone_number: str  # Indian phone number format: +91XXXXXXXXXX
+    name: Optional[str] = None  # Optional farmer name
+    location: Optional[str] = None  # Optional location for better recommendations
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_login: Optional[datetime] = None
+    is_verified: bool = False
+
+class PhoneNumberRequest(BaseModel):
+    phone_number: str  # Format: +91XXXXXXXXXX or 91XXXXXXXXXX
+
+class OTPVerificationRequest(BaseModel):
+    phone_number: str
+    otp: str
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    location: Optional[str] = None
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user_id: str
+<<<<<<< HEAD
     email: str
+=======
+    phone_number: str
+    is_new_user: bool = False
+
+class OTPResponse(BaseModel):
+    success: bool
+    message: str
+    expires_in: int = 300  # 5 minutes
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -317,6 +353,90 @@ class VoiceResponse(BaseModel):
     tools_used: List[str] = []
     processing_time: Optional[float] = None
 
+<<<<<<< HEAD
+=======
+# ==================== OTP Service ====================
+
+class OTPService:
+    """Simple OTP service for phone number verification"""
+    
+    def __init__(self):
+        self.otp_storage = {}  # In production, use Redis
+        self.otp_expiry = 300  # 5 minutes
+    
+    def generate_otp(self, phone_number: str) -> str:
+        """Generate mock OTP (always 7421 for development)"""
+        otp = "7421"  # Fixed mock OTP for development
+        
+        # Store OTP with expiry
+        self.otp_storage[phone_number] = {
+            'otp': otp,
+            'created_at': time.time(),
+            'attempts': 0
+        }
+        
+        return otp
+    
+    def verify_otp(self, phone_number: str, otp: str) -> bool:
+        """Verify OTP"""
+        if phone_number not in self.otp_storage:
+            return False
+        
+        stored_data = self.otp_storage[phone_number]
+        
+        # Check expiry
+        if time.time() - stored_data['created_at'] > self.otp_expiry:
+            del self.otp_storage[phone_number]
+            return False
+        
+        # Check attempts (max 3)
+        if stored_data['attempts'] >= 3:
+            del self.otp_storage[phone_number]
+            return False
+        
+        # Verify OTP
+        if stored_data['otp'] == otp:
+            del self.otp_storage[phone_number]
+            return True
+        else:
+            stored_data['attempts'] += 1
+            return False
+    
+    async def send_otp_sms(self, phone_number: str, otp: str) -> bool:
+        """Send OTP via SMS (mock implementation)"""
+        # In production, integrate with Twilio, AWS SNS, or Indian SMS providers
+        logger.info(f"📱 Mock SMS to {phone_number}: Your OTP is {otp}")
+        
+        # For development, always use mock OTP 7421
+        print(f"🔐 Mock OTP sent to {phone_number}: {otp} (Use 7421 to verify)")
+        return True
+
+def normalize_phone_number(phone: str) -> str:
+    """Normalize Indian phone number to +91XXXXXXXXXX format"""
+    # Remove all non-digits
+    digits = ''.join(filter(str.isdigit, phone))
+    
+    # Handle different formats
+    if digits.startswith('91') and len(digits) == 12:
+        return f"+{digits}"
+    elif len(digits) == 10:
+        return f"+91{digits}"
+    else:
+        raise ValueError("Invalid Indian phone number format")
+
+def validate_indian_phone(phone: str) -> bool:
+    """Validate Indian phone number"""
+    try:
+        normalized = normalize_phone_number(phone)
+        # Check if it's a valid Indian mobile number (starts with +91 and has 10 digits after)
+        return len(normalized) == 13 and normalized.startswith('+91')
+    except:
+        return False
+
+# Initialize OTP service
+otp_service = OTPService()
+
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 # ==================== Auth Utilities ====================
 
 def hash_password(password: str) -> str:
@@ -330,9 +450,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     hashed_bytes = hashed_password.encode('utf-8')
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
+<<<<<<< HEAD
 def create_access_token(user_id: str, email: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
     to_encode = {"user_id": user_id, "email": email, "exp": expire}
+=======
+def create_access_token(user_id: str, phone_number: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
+    to_encode = {"user_id": user_id, "phone_number": phone_number, "exp": expire}
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
@@ -341,10 +467,17 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         token = credentials.credentials
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id: str = payload.get("user_id")
+<<<<<<< HEAD
         email: str = payload.get("email")
         if user_id is None or email is None:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
         return {"user_id": user_id, "email": email}
+=======
+        phone_number: str = payload.get("phone_number")
+        if user_id is None or phone_number is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        return {"user_id": user_id, "phone_number": phone_number}
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.JWTError:
@@ -561,6 +694,10 @@ IMPORTANT RULES:
    - weather: Weather forecasts, irrigation planning, pest risk alerts
    - pest-identifier: Pest/disease identification and treatment recommendations
    - mandi-price: Market price trends, predictions, best market recommendations
+<<<<<<< HEAD
+=======
+   - scheme-tool: Crop damage, insurance claims, government relief schemes, compensation
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
    - none: Use base LLM knowledge for general farming advice
 4. Detect language: en, hi, ta, te, mr, bn, gu, kn, ml, pa
 5. Determine reasoning complexity:
@@ -580,7 +717,13 @@ Respond in JSON format:
   "needs_weather": true/false,
   "needs_pest_identifier": true/false,
   "needs_mandi_price": true/false,
+<<<<<<< HEAD
   "crop_price_params": {"state": "...", "commodity": "...", "district": "..."},
+=======
+  "needs_scheme_tool": true/false,
+  "crop_price_params": {"state": "...", "commodity": "...", "district": "..."},
+  "scheme_tool_params": {"damage_type": "...", "crop_type": "...", "state": "...", "district": "..."},
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
   "search_query": "...",
   "reasoning_steps": ["step1", "step2", "step3"],
   "synthesis_requirements": ["correlation1", "correlation2"],
@@ -592,6 +735,11 @@ Examples:
 - "Best practices for rice cultivation" → needs_web_search: false (use base knowledge)
 - "Latest news on wheat prices" → needs_web_search: true (recent/current data)
 - "Current price of cotton in Punjab" → needs_crop_price: true
+<<<<<<< HEAD
+=======
+- "My rice crop is damaged due to flood" → needs_scheme_tool: true
+- "Need help with crop insurance claim" → needs_scheme_tool: true
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 - "Tell me a joke" → is_agricultural: false"""
         
         messages = [
@@ -736,6 +884,24 @@ Examples:
                 logger.info(f"Mandi-price tool failed: {result}")
                 tool_results["mandi_price"] = result
         
+<<<<<<< HEAD
+=======
+        # Execute scheme tool for crop damage assistance
+        if analysis.get("needs_scheme_tool"):
+            params = analysis.get("scheme_tool_params", {})
+            logger.info(f"Calling scheme-tool with params: {params}")
+            result = await self.mcp.call_tool("scheme-tool", params)
+            logger.info(f"Scheme-tool result: {result}")
+            
+            if result and not result.get("error"):
+                tool_results["scheme_tool"] = result
+                tools_used.append("scheme-tool")
+                logger.info("Scheme-tool executed successfully")
+            else:
+                logger.info(f"Scheme-tool failed: {result}")
+                tool_results["scheme_tool"] = result
+        
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
         return {"results": tool_results, "tools_used": tools_used}
     
     async def synthesize_data(self, analysis: Dict[str, Any], tool_results: Dict[str, Any]) -> Dict[str, Any]:
@@ -875,6 +1041,48 @@ Focus on practical agricultural insights that help farmers make better decisions
             else:
                 tool_failures.append("web search could not be completed")
         
+<<<<<<< HEAD
+=======
+        if tool_results.get("scheme_tool"):
+            scheme_data = tool_results["scheme_tool"]
+            if scheme_data.get("data") and not scheme_data.get("error"):
+                data = scheme_data.get("data", {})
+                farmer_situation = data.get("farmer_situation", {})
+                recommendations = data.get("recommendations", [])
+                
+                context_info += f"🚨 CROP DAMAGE ASSISTANCE AVAILABLE:\n"
+                context_info += f"Damage Type: {farmer_situation.get('damage_type', 'Unknown')}\n"
+                context_info += f"Estimated Compensation: ₹{farmer_situation.get('estimated_compensation', 0):,}\n"
+                context_info += f"Available Recommendations: {len(recommendations)}\n"
+                
+                # Add top recommendations
+                if recommendations:
+                    context_info += f"Top Recommendations:\n"
+                    for i, rec in enumerate(recommendations[:3], 1):
+                        context_info += f"{i}. {rec['action']} ({rec['priority']} priority)\n"
+                        if rec.get('contact'):
+                            context_info += f"   Contact: {rec['contact']}\n"
+                
+                # Add immediate actions
+                action_plan = data.get("action_plan", {})
+                immediate_actions = action_plan.get("immediate_actions", [])
+                if immediate_actions:
+                    context_info += f"Immediate Actions Required:\n"
+                    for i, action in enumerate(immediate_actions[:3], 1):
+                        context_info += f"{i}. {action}\n"
+                
+                # Add important contacts
+                contacts = data.get("important_contacts", {})
+                if contacts:
+                    context_info += f"Important Helplines:\n"
+                    context_info += f"PMFBY: {contacts.get('pmfby_helpline', 'N/A')}\n"
+                    context_info += f"Kisan Call Center: {contacts.get('kisan_call_center', 'N/A')}\n"
+                
+                context_info += f"Scheme assistance data: {scheme_data['data']}\n"
+            else:
+                tool_failures.append("crop damage scheme assistance could not be retrieved")
+        
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
         # Add information about tool failures to help the AI respond appropriately
         if tool_failures:
             context_info += f"\nNote: The following data sources were attempted but unavailable: {', '.join(tool_failures)}. Please provide general agricultural guidance based on your knowledge.\n"
@@ -895,12 +1103,21 @@ Focus on practical agricultural insights that help farmers make better decisions
         detected_crop = self._extract_crop_from_message(user_message)
         
         # Enhance context with RAG knowledge
+<<<<<<< HEAD
         base_prompt = f"""You are a helpful agricultural AI assistant EXCLUSIVELY for farmers. 
 
 CRITICAL: You MUST respond in {response_language}. Match the user's language EXACTLY.
 
 You have access to real-time crop prices and agricultural research.
 Be practical, empathetic, and provide actionable advice.
+=======
+        base_prompt = f"""You are a practical agricultural AI assistant for farmers. 
+
+CRITICAL: You MUST respond in {response_language}. Match the user's language EXACTLY.
+
+You have access to real-time crop prices and agricultural data.
+Provide direct, actionable information that farmers can use immediately.
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 {context_info if context_info else "Use your agricultural knowledge to provide helpful farming advice."}"""
 
@@ -911,6 +1128,7 @@ Be practical, empathetic, and provide actionable advice.
         
         system_prompt = enhanced_prompt + f"""
 
+<<<<<<< HEAD
 CRITICAL RESPONSE RULES - FOLLOW EXACTLY:
 - Maximum 150 words
 - NO markdown formatting (no **, __, ##, -, etc.)
@@ -925,6 +1143,33 @@ Example good response:
 "The PM-KISAN scheme provides Rs 6,000 yearly to small farmers. The Soil Health Card helps with fertilizer recommendations. PMFBY offers crop insurance protection."
 
 NEVER use formatting like **bold** or numbered lists."""
+=======
+FARMER-FRIENDLY RESPONSE FORMAT - FOLLOW EXACTLY:
+
+For PRICE QUERIES:
+- Start with current price range: "Wheat price: Rs X to Rs Y per quintal"
+- Show 2-3 specific markets with prices
+- Add one practical tip (best time to sell, market trends)
+- Keep under 100 words
+
+For FARMING ADVICE:
+- Give direct answer first
+- Add 1-2 specific steps to take
+- Mention timing if relevant
+- Keep practical and simple
+
+FORMATTING RULES:
+- NO markdown (no **, __, ##, -, etc.)
+- Use plain text only
+- Short, clear sentences
+- Natural paragraph breaks
+- Respond ONLY in {response_language}
+
+Example price response:
+"Wheat price in Punjab: Rs 2,100 to Rs 2,300 per quintal. Ludhiana mandi: Rs 2,250, Amritsar: Rs 2,200, Jalandhar: Rs 2,150. Prices are stable this week. Good time to sell if you have quality grain."
+
+Be direct and helpful like talking to a neighbor farmer."""
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
         
         messages = [
             {"role": "system", "content": system_prompt}
@@ -1107,6 +1352,7 @@ NEVER use formatting like **bold** or numbered lists."""
             "confidence": analysis.get("confidence", 0.8)
         }
 
+<<<<<<< HEAD
 # Initialize agentic service
 agentic_service = AgenticChatService(cerebras_service, mcp_client, db)
 
@@ -1155,6 +1401,135 @@ async def login(credentials: UserLogin):
         user_id=user["id"],
         email=user["email"]
     )
+=======
+# Initialize agentic service (database will be retrieved dynamically)
+agentic_service = AgenticChatService(cerebras_service, mcp_client, None)
+
+# ==================== API Routes ====================
+
+@api_router.post("/auth/send-otp", response_model=OTPResponse)
+async def send_otp(request: PhoneNumberRequest):
+    """Send OTP to phone number"""
+    try:
+        # Validate phone number
+        if not validate_indian_phone(request.phone_number):
+            raise HTTPException(status_code=400, detail="Invalid Indian phone number format")
+        
+        # Normalize phone number
+        normalized_phone = normalize_phone_number(request.phone_number)
+        
+        # Generate and send OTP
+        otp = otp_service.generate_otp(normalized_phone)
+        await otp_service.send_otp_sms(normalized_phone, otp)
+        
+        return OTPResponse(
+            success=True,
+            message=f"OTP sent to {normalized_phone}",
+            expires_in=300
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error sending OTP: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send OTP")
+
+@api_router.post("/auth/verify-otp", response_model=Token)
+async def verify_otp_and_login(request: OTPVerificationRequest):
+    """Verify OTP and login/register user"""
+    try:
+        # Validate phone number
+        if not validate_indian_phone(request.phone_number):
+            raise HTTPException(status_code=400, detail="Invalid phone number format")
+        
+        # Normalize phone number
+        normalized_phone = normalize_phone_number(request.phone_number)
+        
+        # Verify OTP
+        if not otp_service.verify_otp(normalized_phone, request.otp):
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        
+        # Get database instance
+        database = await get_database()
+        
+        # Check if user exists
+        existing_user = await database.users.find_one({"phone_number": normalized_phone})
+        
+        if existing_user:
+            # Existing user - update last login
+            await database.users.update_one(
+                {"phone_number": normalized_phone},
+                {
+                    "$set": {
+                        "last_login": datetime.now(timezone.utc).isoformat(),
+                        "is_verified": True
+                    }
+                }
+            )
+            
+            # Generate token
+            access_token = create_access_token(existing_user["id"], normalized_phone)
+            
+            return Token(
+                access_token=access_token,
+                user_id=existing_user["id"],
+                phone_number=normalized_phone,
+                is_new_user=False
+            )
+        else:
+            # New user - create account
+            user = User(
+                phone_number=normalized_phone,
+                is_verified=True,
+                last_login=datetime.now(timezone.utc)
+            )
+            
+            user_dict = user.dict()
+            user_dict['created_at'] = user_dict['created_at'].isoformat()
+            user_dict['last_login'] = user_dict['last_login'].isoformat()
+            
+            await database.users.insert_one(user_dict)
+            
+            # Generate token
+            access_token = create_access_token(user.id, normalized_phone)
+            
+            return Token(
+                access_token=access_token,
+                user_id=user.id,
+                phone_number=normalized_phone,
+                is_new_user=True
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error verifying OTP: {e}")
+        raise HTTPException(status_code=500, detail="Verification failed")
+
+@api_router.post("/auth/update-profile")
+async def update_profile(profile_data: UserProfileUpdate, current_user: Dict = Depends(get_current_user)):
+    """Update user profile information"""
+    try:
+        database = await get_database()
+        
+        update_data = {}
+        if profile_data.name:
+            update_data["name"] = profile_data.name
+        if profile_data.location:
+            update_data["location"] = profile_data.location
+        
+        if update_data:
+            await database.users.update_one(
+                {"id": current_user["user_id"]},
+                {"$set": update_data}
+            )
+        
+        return {"success": True, "message": "Profile updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating profile: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update profile")
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 @api_router.get("/auth/me")
 async def get_current_user_info(current_user: Dict = Depends(get_current_user)):
@@ -2069,7 +2444,15 @@ async def health_check():
         # Check database connection
         db_status = "healthy"
         try:
+<<<<<<< HEAD
             await db.command("ping")
+=======
+            database = await get_database()
+            if hasattr(database, 'command'):
+                await database.command("ping")
+            else:
+                db_status = "mock_database"
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
         except Exception as e:
             db_status = f"unhealthy: {str(e)}"
         
@@ -2228,6 +2611,16 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+<<<<<<< HEAD
+=======
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and services on startup"""
+    global db
+    db = await get_database()
+    logger.info("Database initialized for all endpoints")
+
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()

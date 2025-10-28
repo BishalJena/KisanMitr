@@ -5,7 +5,12 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
+<<<<<<< HEAD
     "dev": "ts-node src/server.ts"
+=======
+    "dev": "ts-node --esm src/server.ts",
+    "test:scheme": "node test-scheme-tool.js"
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

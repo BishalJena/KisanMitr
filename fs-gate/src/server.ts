@@ -53,6 +53,37 @@ interface BasePrice {
     [key: string]: number;
 }
 
+<<<<<<< HEAD
+=======
+interface SchemeData {
+    name: string;
+    type: string;
+    coverage?: string[];
+    eligibility?: string;
+    assistance?: string;
+    premium_subsidy?: string;
+    claim_process?: string[];
+    documents_required?: string[];
+    helpline?: string;
+    website?: string;
+    process?: string[];
+}
+
+interface RecommendationData {
+    category: string;
+    priority: string;
+    action: string;
+    scheme?: SchemeData;
+    steps?: string[];
+    documents?: string[];
+    timeline?: string;
+    contact?: string;
+    message?: string;
+    schemes?: SchemeData[];
+    benefit?: string;
+}
+
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 /**
  * Crop Price Tool Handler
  */
@@ -71,6 +102,13 @@ const cropPriceHandler = async (params: any) => {
         const limit = params.limit ?? 50;
         const offset = params.offset ?? 0;
 
+<<<<<<< HEAD
+=======
+        // Normalize commodity name to proper case (Data.gov.in expects proper case)
+        const normalizedCommodity = commodity ? 
+            commodity.charAt(0).toUpperCase() + commodity.slice(1).toLowerCase() : null;
+
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
         // Build URL with filters[...] parameters
         const base = `https://api.data.gov.in/resource/${encodeURIComponent(RESOURCE_ID)}`;
         const urlParams = new URLSearchParams();
@@ -81,7 +119,11 @@ const cropPriceHandler = async (params: any) => {
 
         if (state) urlParams.append("filters[State]", state);
         if (district) urlParams.append("filters[District]", district);
+<<<<<<< HEAD
         if (commodity) urlParams.append("filters[Commodity]", commodity);
+=======
+        if (normalizedCommodity) urlParams.append("filters[Commodity]", normalizedCommodity);
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
         const url = `${base}?${urlParams.toString()}`;
 
@@ -678,6 +720,288 @@ const searchHandler = async (params: any) => {
     }
 };
 
+<<<<<<< HEAD
+=======
+/**
+ * Scheme Tool Handler - Helps farmers with crop damage schemes and insurance
+ */
+const schemeToolHandler = async (params: any) => {
+    try {
+        const { 
+            damage_type, 
+            crop_type, 
+            state, 
+            district, 
+            damage_extent, 
+            has_insurance, 
+            insurance_type,
+            farmer_category,
+            land_size_acres,
+            damage_date,
+            search_relief_schemes = true
+        } = params;
+
+        // Comprehensive scheme database for Indian farmers
+        const schemeDatabase = {
+            "crop_insurance": [
+                {
+                    name: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+                    type: "crop_insurance",
+                    coverage: ["drought", "flood", "cyclone", "hailstorm", "pest_attack", "disease"],
+                    eligibility: "All farmers (landowner/tenant/sharecropper)",
+                    premium_subsidy: "Up to 90% government subsidy",
+                    claim_process: [
+                        "Report crop loss within 72 hours to insurance company",
+                        "Submit required documents (land records, bank details, etc.)",
+                        "Crop cutting experiments conducted by government",
+                        "Claim settlement based on yield data"
+                    ],
+                    documents_required: [
+                        "Land ownership documents/tenancy agreement",
+                        "Bank account details",
+                        "Aadhaar card",
+                        "Crop sowing certificate",
+                        "Premium payment receipt"
+                    ],
+                    helpline: "1800-200-7710",
+                    website: "https://pmfby.gov.in"
+                },
+                {
+                    name: "Weather Based Crop Insurance Scheme (WBCIS)",
+                    type: "weather_insurance",
+                    coverage: ["rainfall", "temperature", "humidity", "wind_speed"],
+                    eligibility: "Farmers in notified areas",
+                    premium_subsidy: "Up to 90% government subsidy",
+                    claim_process: [
+                        "Automatic trigger based on weather parameters",
+                        "No need for individual assessment",
+                        "Quick settlement within 45 days"
+                    ],
+                    documents_required: [
+                        "Land records",
+                        "Bank account details",
+                        "Insurance policy document"
+                    ],
+                    helpline: "1800-200-7710"
+                }
+            ],
+            "relief_schemes": [
+                {
+                    name: "State Disaster Response Fund (SDRF)",
+                    type: "disaster_relief",
+                    coverage: ["natural_calamities", "drought", "flood", "cyclone", "hailstorm"],
+                    assistance: "Input subsidy, compensation for crop loss",
+                    eligibility: "Farmers affected by notified disasters",
+                    process: [
+                        "District administration conducts damage assessment",
+                        "Farmers submit applications through village officials",
+                        "Verification by revenue officials",
+                        "Direct benefit transfer to bank accounts"
+                    ]
+                },
+                {
+                    name: "National Disaster Response Fund (NDRF)",
+                    type: "national_relief",
+                    coverage: ["severe_natural_calamities"],
+                    assistance: "Additional support for severe disasters",
+                    eligibility: "Farmers in severely affected areas"
+                },
+                {
+                    name: "Kisan Credit Card (KCC) - Crop Loan Waiver",
+                    type: "loan_relief",
+                    coverage: ["crop_failure", "natural_disasters"],
+                    assistance: "Loan restructuring, interest waiver",
+                    eligibility: "KCC holders with crop loans"
+                }
+            ],
+            "input_schemes": [
+                {
+                    name: "Seed Subsidy Scheme",
+                    type: "input_support",
+                    assistance: "50-75% subsidy on certified seeds",
+                    eligibility: "Small and marginal farmers",
+                    coverage: ["crop_replanting", "season_change"]
+                },
+                {
+                    name: "Fertilizer Subsidy",
+                    type: "input_support", 
+                    assistance: "Subsidized fertilizers through DBT",
+                    eligibility: "All farmers with soil health card"
+                }
+            ]
+        };
+
+        // Analyze farmer's situation and recommend schemes
+        const recommendations: RecommendationData[] = [];
+        const eligibleSchemes: SchemeData[] = [];
+
+        // Check insurance status and provide guidance
+        if (has_insurance) {
+            const insuranceScheme = schemeDatabase.crop_insurance.find(scheme => 
+                scheme.name.toLowerCase().includes(insurance_type?.toLowerCase() || 'pmfby')
+            ) || schemeDatabase.crop_insurance[0];
+
+            recommendations.push({
+                category: "insurance_claim",
+                priority: "high",
+                action: "File Insurance Claim Immediately",
+                scheme: insuranceScheme,
+                steps: insuranceScheme.claim_process,
+                documents: insuranceScheme.documents_required,
+                timeline: "Report within 72 hours of damage",
+                contact: insuranceScheme.helpline
+            });
+        } else {
+            recommendations.push({
+                category: "insurance_enrollment",
+                priority: "medium",
+                action: "Enroll in Crop Insurance for Future Protection",
+                message: "Consider enrolling in PMFBY for next season to protect against such losses",
+                schemes: schemeDatabase.crop_insurance
+            });
+        }
+
+        // Check for relief schemes based on damage type
+        const applicableReliefSchemes = schemeDatabase.relief_schemes.filter(scheme =>
+            scheme.coverage.includes(damage_type) || scheme.coverage.includes('natural_calamities')
+        );
+
+        applicableReliefSchemes.forEach(scheme => {
+            eligibleSchemes.push(scheme);
+            recommendations.push({
+                category: "relief_assistance",
+                priority: "high",
+                action: `Apply for ${scheme.name}`,
+                scheme: scheme,
+                steps: scheme.process || [
+                    "Contact village revenue official",
+                    "Submit damage assessment application",
+                    "Provide required documents",
+                    "Follow up with district collector office"
+                ]
+            });
+        });
+
+        // Input support schemes for replanting
+        if (damage_extent === "complete" || damage_extent === "severe") {
+            schemeDatabase.input_schemes.forEach(scheme => {
+                recommendations.push({
+                    category: "input_support",
+                    priority: "medium",
+                    action: `Apply for ${scheme.name}`,
+                    scheme: scheme,
+                    benefit: scheme.assistance
+                });
+            });
+        }
+
+        // Search for recent government relief announcements using EXA
+        let recentReliefNews = [];
+        if (search_relief_schemes) {
+            try {
+                const searchQuery = `India government crop damage relief scheme ${state} ${damage_type} ${new Date().getFullYear()}`;
+                const searchResult = await searchHandler({
+                    query: searchQuery,
+                    num_results: 5,
+                    include_domains: ["pib.gov.in", "agricoop.gov.in", "farmer.gov.in", "pmfby.gov.in"],
+                    start_crawl_date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Last 90 days
+                });
+
+                if (searchResult.success && searchResult.data.results) {
+                    recentReliefNews = searchResult.data.results.map((result: any) => ({
+                        title: result.title,
+                        url: result.url,
+                        summary: result.text,
+                        relevance: "recent_announcement"
+                    }));
+                }
+            } catch (err) {
+                console.log("Search for relief schemes failed:", err);
+            }
+        }
+
+        // Generate personalized action plan
+        const actionPlan = {
+            immediate_actions: [
+                "Document crop damage with photographs",
+                "Report to village revenue official within 72 hours",
+                has_insurance ? "Contact insurance company immediately" : "Check if area is covered under any relief scheme",
+                "Collect all required documents"
+            ],
+            short_term_actions: [
+                "Submit applications for all eligible schemes",
+                "Follow up with concerned officials",
+                "Plan for replanting if season permits"
+            ],
+            long_term_actions: [
+                "Enroll in crop insurance for next season",
+                "Diversify crops to reduce risk",
+                "Adopt climate-resilient farming practices"
+            ]
+        };
+
+        // Calculate potential compensation
+        let estimatedCompensation = 0;
+        if (land_size_acres && damage_extent) {
+            const baseCompensation: { [key: string]: number } = {
+                "complete": 15000, // per acre
+                "severe": 10000,
+                "moderate": 6000,
+                "minor": 3000
+            };
+            
+            const damageMultiplier = baseCompensation[damage_extent] || 6000;
+            estimatedCompensation = land_size_acres * damageMultiplier;
+        }
+
+        return {
+            success: true,
+            data: {
+                farmer_situation: {
+                    damage_type,
+                    crop_type,
+                    location: { state, district },
+                    damage_extent,
+                    has_insurance,
+                    insurance_type,
+                    land_size_acres,
+                    estimated_compensation: estimatedCompensation
+                },
+                recommendations: recommendations,
+                eligible_schemes: eligibleSchemes,
+                action_plan: actionPlan,
+                recent_relief_announcements: recentReliefNews,
+                important_contacts: {
+                    pmfby_helpline: "1800-200-7710",
+                    kisan_call_center: "1800-180-1551",
+                    district_collector: `Contact ${district} District Collector Office`,
+                    agriculture_officer: `Contact ${district} Agriculture Extension Officer`
+                },
+                documents_checklist: [
+                    "Land ownership documents/lease agreement",
+                    "Aadhaar card and bank account details",
+                    "Crop insurance policy (if any)",
+                    "Photographs of damaged crops",
+                    "Village revenue official's damage assessment",
+                    "Soil health card",
+                    "Previous season's crop details"
+                ],
+                next_steps: [
+                    "Visit village revenue official immediately",
+                    "File insurance claim if insured",
+                    "Apply for government relief schemes",
+                    "Plan for next cropping season"
+                ],
+                timestamp: new Date().toISOString(),
+                source: "Agricultural Scheme Database + Government Relief Search"
+            }
+        };
+    } catch (err) {
+        return { error: `Scheme tool error: ${String(err)}` };
+    }
+};
+
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 // Store tool handlers
 const toolHandlers = new Map();
 toolHandlers.set('crop-price', cropPriceHandler);
@@ -686,6 +1010,10 @@ toolHandlers.set('soil-health', soilHealthHandler);
 toolHandlers.set('weather', weatherHandler);
 toolHandlers.set('pest-identifier', pestIdentifierHandler);
 toolHandlers.set('mandi-price', mandiPriceHandler);
+<<<<<<< HEAD
+=======
+toolHandlers.set('scheme-tool', schemeToolHandler);
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 // MCP Tool Definitions
 const mcpTools: MCPTool[] = [
@@ -868,6 +1196,69 @@ const mcpTools: MCPTool[] = [
             },
             required: ["commodity"]
         }
+<<<<<<< HEAD
+=======
+    },
+    {
+        name: "scheme-tool",
+        description: "Help farmers with crop damage schemes, insurance claims, and government relief programs. Searches for recent relief announcements and provides personalized guidance.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                damage_type: {
+                    type: "string",
+                    description: "Type of damage (e.g., drought, flood, cyclone, hailstorm, pest_attack, disease, fire)",
+                    enum: ["drought", "flood", "cyclone", "hailstorm", "pest_attack", "disease", "fire", "unseasonal_rain", "frost", "other"]
+                },
+                crop_type: {
+                    type: "string",
+                    description: "Type of crop affected (e.g., wheat, rice, cotton, sugarcane, maize)"
+                },
+                state: {
+                    type: "string",
+                    description: "State where damage occurred"
+                },
+                district: {
+                    type: "string",
+                    description: "District where damage occurred"
+                },
+                damage_extent: {
+                    type: "string",
+                    description: "Extent of damage",
+                    enum: ["minor", "moderate", "severe", "complete"]
+                },
+                has_insurance: {
+                    type: "boolean",
+                    description: "Whether farmer has crop insurance",
+                    default: false
+                },
+                insurance_type: {
+                    type: "string",
+                    description: "Type of insurance (e.g., PMFBY, WBCIS, private)",
+                    enum: ["pmfby", "wbcis", "private", "none"]
+                },
+                farmer_category: {
+                    type: "string",
+                    description: "Category of farmer",
+                    enum: ["small", "marginal", "medium", "large"]
+                },
+                land_size_acres: {
+                    type: "number",
+                    description: "Size of affected land in acres"
+                },
+                damage_date: {
+                    type: "string",
+                    description: "Date when damage occurred (YYYY-MM-DD format)"
+                },
+                search_relief_schemes: {
+                    type: "boolean",
+                    description: "Whether to search for recent government relief announcements",
+                    default: true
+                }
+            },
+            required: ["damage_type", "state", "district"]
+        }
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
     }
 ];
 
@@ -1014,7 +1405,11 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
             status: 'healthy',
             server: 'agricultural-ai-mcp',
             protocols: ['http', 'mcp'],
+<<<<<<< HEAD
             tools: ['crop-price', 'search', 'soil-health', 'weather', 'pest-identifier', 'mandi-price'],
+=======
+            tools: ['crop-price', 'search', 'soil-health', 'weather', 'pest-identifier', 'mandi-price', 'scheme-tool'],
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
             timestamp: new Date().toISOString(),
             environment: {
                 datagovin_key_set: !!process.env.DATAGOVIN_API_KEY,
@@ -1116,6 +1511,28 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
                         days_back: 'number (optional) - Historical data days',
                         include_predictions: 'boolean (optional) - Include predictions'
                     }
+<<<<<<< HEAD
+=======
+                },
+                {
+                    name: 'scheme-tool',
+                    description: 'Help farmers with crop damage schemes, insurance claims, and government relief programs',
+                    endpoint: '/tools/scheme-tool',
+                    method: 'POST',
+                    parameters: {
+                        damage_type: 'string (required) - Type of damage (drought, flood, cyclone, hailstorm, pest_attack, disease, fire, etc.)',
+                        crop_type: 'string (optional) - Type of crop affected',
+                        state: 'string (required) - State where damage occurred',
+                        district: 'string (required) - District where damage occurred',
+                        damage_extent: 'string (optional) - Extent of damage (minor, moderate, severe, complete)',
+                        has_insurance: 'boolean (optional) - Whether farmer has crop insurance',
+                        insurance_type: 'string (optional) - Type of insurance (pmfby, wbcis, private)',
+                        farmer_category: 'string (optional) - Category of farmer (small, marginal, medium, large)',
+                        land_size_acres: 'number (optional) - Size of affected land in acres',
+                        damage_date: 'string (optional) - Date when damage occurred',
+                        search_relief_schemes: 'boolean (optional) - Search for recent relief announcements'
+                    }
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
                 }
             ],
             usage: {
@@ -1152,6 +1569,24 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
                     url: '/tools/mandi-price',
                     method: 'POST',
                     body: { commodity: 'wheat', state: 'Punjab', district: 'Ludhiana', include_predictions: true }
+<<<<<<< HEAD
+=======
+                },
+                'scheme-tool': {
+                    url: '/tools/scheme-tool',
+                    method: 'POST',
+                    body: { 
+                        damage_type: 'flood', 
+                        crop_type: 'rice', 
+                        state: 'Punjab', 
+                        district: 'Ludhiana', 
+                        damage_extent: 'severe', 
+                        has_insurance: true, 
+                        insurance_type: 'pmfby',
+                        land_size_acres: 5,
+                        search_relief_schemes: true
+                    }
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
                 }
             }
         }));

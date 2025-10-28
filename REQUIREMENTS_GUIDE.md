@@ -189,7 +189,11 @@ No new dependencies in recent changes (Auth UI used existing CSS)
 ```bash
 # 1. Clone repository
 git clone <repo-url>
+<<<<<<< HEAD
 cd farmchat
+=======
+cd emergent-farmchat
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 # 2. Install Python dependencies (backend)
 python -m venv venv
