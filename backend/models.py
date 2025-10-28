@@ -5,9 +5,18 @@ import uuid
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+<<<<<<< HEAD
     email: EmailStr
     password_hash: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+=======
+    phone_number: str  # Indian phone number format: +91XXXXXXXXXX
+    name: Optional[str] = None  # Optional farmer name
+    location: Optional[str] = None  # Optional location for better recommendations
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_login: Optional[datetime] = None
+    is_verified: bool = False
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

@@ -1,5 +1,9 @@
 # ========================================
+<<<<<<< HEAD
 # FarmChat - Unified Requirements
+=======
+# Emergent FarmChat - Unified Requirements
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 # ========================================
 # This file consolidates all Python dependencies for the entire project
 # Created: October 5, 2025

@@ -932,17 +932,28 @@ function ChatInterface({ user, onLogout }) {
                 data-testid="profile-button"
               >
                 <div className="profile-avatar">
+<<<<<<< HEAD
                   {user.email[0].toUpperCase()}
+=======
+                  {user.phone_number ? user.phone_number.slice(-2) : 'U'}
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
                 </div>
               </button>
               {profileMenuOpen && (
                 <div className="profile-dropdown">
                   <div className="profile-header">
                     <div className="profile-avatar-large">
+<<<<<<< HEAD
                       {user.email[0].toUpperCase()}
                     </div>
                     <div className="profile-info">
                       <div className="profile-email">{user.email}</div>
+=======
+                      {user.phone_number ? user.phone_number.slice(-2) : 'U'}
+                    </div>
+                    <div className="profile-info">
+                      <div className="profile-email">{user.phone_number}</div>
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
                     </div>
                   </div>
                   <div className="profile-menu-items">
@@ -1011,7 +1022,11 @@ function ChatInterface({ user, onLogout }) {
               <div key={message.id} className="message-wrapper">
                 <div className={`message ${message.role}`}>
                   <div className="message-avatar">
+<<<<<<< HEAD
                     {message.role === 'user' ? user.email[0].toUpperCase() : 'AI'}
+=======
+                    {message.role === 'user' ? (user.phone_number ? user.phone_number.slice(-2) : 'U') : 'AI'}
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
                   </div>
                   <div className="message-content">
                     <div className="message-text">{message.content}</div>
@@ -1053,6 +1068,10 @@ function ChatInterface({ user, onLogout }) {
                               {tool === 'weather' && '🌤️ Weather'}
                               {tool === 'pest-identifier' && '🐛 Pest ID'}
                               {tool === 'mandi-price' && '💰 Mandi Price'}
+<<<<<<< HEAD
+=======
+                              {tool === 'scheme-tool' && '🛡️ Crop Damage Assistance'}
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
                               {tool === 'cerebras-llama-3.1-8b' && '🧠 Cerebras Llama 3.1-8B'}
                             </span>
                           ))

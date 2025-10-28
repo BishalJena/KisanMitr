@@ -4,6 +4,10 @@
 .idea/
 .vscode/
 .kiro
+<<<<<<< HEAD
+=======
+.emergent
+>>>>>>> c7ba531 (Initial push: migrate local codebase to KisanMitr)
 .DS_Store
 
 # Dependencies
